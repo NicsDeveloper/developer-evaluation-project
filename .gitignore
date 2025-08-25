@@ -5,6 +5,11 @@
 # Especific Folders
 .[eE]ng/[dD]ata/
 
+# Ignore appsettings but keep examples
+**/appsettings.json
+**/appsettings.Development.json
+!**/appsettings.example.json
+
 # User-specific files
 *.rsuser
 *.suo
