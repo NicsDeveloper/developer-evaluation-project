@@ -1,14 +1,13 @@
 using Ambev.DeveloperEvaluation.Domain.Common;
-using Ambev.DeveloperEvaluation.Domain.Enums;
 
-namespace Ambev.DeveloperEvaluation.Domain.Entities;
-
-/// <summary>
-/// Represents a sale transaction in the system.
-/// This entity follows domain-driven design principles and includes business rules validation.
-/// </summary>
-public class Sale : BaseEntity
+namespace Ambev.DeveloperEvaluation.Domain.Entities
 {
+  /// <summary>
+  /// Represents a sale transaction in the system.
+  /// This entity follows domain-driven design principles and includes business rules validation.
+  /// </summary>
+  public class Sale : BaseEntity
+  {
     /// <summary>
     /// Gets the unique sale number for this transaction.
     /// Format: SAL-yyyymmdd-#### or BRANCH-yyyymmdd-####
@@ -63,7 +62,7 @@ public class Sale : BaseEntity
     /// <summary>
     /// Gets the collection of sale items.
     /// </summary>
-    public ICollection<SaleItem> Items { get; private set; } = new List<SaleItem>();
+    public ICollection<SaleItem> Items { get; private set; } = [];
 
     /// <summary>
     /// Gets the date and time when the sale was created.
@@ -80,12 +79,12 @@ public class Sale : BaseEntity
     /// </summary>
     public Sale()
     {
-        Date = DateTime.UtcNow;
-        CreatedAt = DateTime.UtcNow;
-        GrossTotal = 0;
-        DiscountTotal = 0;
-        NetTotal = 0;
-        Cancelled = false;
+      Date = DateTime.UtcNow;
+      CreatedAt = DateTime.UtcNow;
+      GrossTotal = 0;
+      DiscountTotal = 0;
+      NetTotal = 0;
+      Cancelled = false;
     }
 
     /// <summary>
@@ -99,23 +98,20 @@ public class Sale : BaseEntity
     /// <returns>A new Sale instance</returns>
     public static Sale Create(string saleNumber, Guid customerId, string customerName, Guid branchId, string branchName)
     {
-        if (string.IsNullOrWhiteSpace(saleNumber))
-            throw new ArgumentException("Sale number cannot be null or empty", nameof(saleNumber));
-
-        if (string.IsNullOrWhiteSpace(customerName))
-            throw new ArgumentException("Customer name cannot be null or empty", nameof(customerName));
-
-        if (string.IsNullOrWhiteSpace(branchName))
-            throw new ArgumentException("Branch name cannot be null or empty", nameof(branchName));
-
-        return new Sale
-        {
-            SaleNumber = saleNumber,
-            CustomerId = customerId,
-            CustomerName = customerName,
-            BranchId = branchId,
-            BranchName = branchName
-        };
+      return string.IsNullOrWhiteSpace(saleNumber)
+        ? throw new ArgumentException("Sale number cannot be null or empty", nameof(saleNumber))
+        : string.IsNullOrWhiteSpace(customerName)
+        ? throw new ArgumentException("Customer name cannot be null or empty", nameof(customerName))
+        : string.IsNullOrWhiteSpace(branchName)
+            ? throw new ArgumentException("Branch name cannot be null or empty", nameof(branchName))
+            : new Sale
+            {
+              SaleNumber = saleNumber,
+              CustomerId = customerId,
+              CustomerName = customerName,
+              BranchId = branchId,
+              BranchName = branchName
+            };
     }
 
     /// <summary>
@@ -124,15 +120,16 @@ public class Sale : BaseEntity
     /// <param name="item">The sale item to add</param>
     public void AddItem(SaleItem item)
     {
-        if (item == null)
-            throw new ArgumentNullException(nameof(item));
+      ArgumentNullException.ThrowIfNull(item);
 
-        if (Cancelled)
-            throw new InvalidOperationException("Cannot add items to a cancelled sale");
+      if (Cancelled)
+      {
+        throw new InvalidOperationException("Cannot add items to a cancelled sale");
+      }
 
-        Items.Add(item);
-        RecalculateTotals();
-        UpdatedAt = DateTime.UtcNow;
+      Items.Add(item);
+      RecalculateTotals();
+      UpdatedAt = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -141,16 +138,18 @@ public class Sale : BaseEntity
     /// <param name="itemId">The ID of the item to remove</param>
     public void RemoveItem(Guid itemId)
     {
-        if (Cancelled)
-            throw new InvalidOperationException("Cannot remove items from a cancelled sale");
+      if (Cancelled)
+      {
+        throw new InvalidOperationException("Cannot remove items from a cancelled sale");
+      }
 
-        var item = Items.FirstOrDefault(i => i.Id == itemId);
-        if (item != null)
-        {
-            Items.Remove(item);
-            RecalculateTotals();
-            UpdatedAt = DateTime.UtcNow;
-        }
+      SaleItem? item = Items.FirstOrDefault(i => i.Id == itemId);
+      if (item != null)
+      {
+        _ = Items.Remove(item);
+        RecalculateTotals();
+        UpdatedAt = DateTime.UtcNow;
+      }
     }
 
     /// <summary>
@@ -158,11 +157,11 @@ public class Sale : BaseEntity
     /// </summary>
     public void RecalculateTotals()
     {
-        var activeItems = Items.Where(i => !i.Cancelled);
-        
-        GrossTotal = activeItems.Sum(i => i.GrossAmount);
-        DiscountTotal = activeItems.Sum(i => i.DiscountAmount);
-        NetTotal = activeItems.Sum(i => i.NetAmount);
+      IEnumerable<SaleItem> activeItems = Items.Where(static i => !i.Cancelled);
+
+      GrossTotal = activeItems.Sum(static i => i.GrossAmount);
+      DiscountTotal = activeItems.Sum(static i => i.DiscountAmount);
+      NetTotal = activeItems.Sum(static i => i.NetAmount);
     }
 
     /// <summary>
@@ -170,11 +169,20 @@ public class Sale : BaseEntity
     /// </summary>
     public void Cancel()
     {
-        if (Cancelled)
-            throw new InvalidOperationException("Sale is already cancelled");
+      if (Cancelled)
+      {
+        throw new InvalidOperationException("Sale is already cancelled");
+      }
 
-        Cancelled = true;
-        UpdatedAt = DateTime.UtcNow;
+      Cancelled = true;
+
+      // Cancel all items
+      foreach (SaleItem item in Items)
+      {
+        item.Cancel();
+      }
+
+      UpdatedAt = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -184,15 +192,37 @@ public class Sale : BaseEntity
     /// <param name="branchName">The new branch name</param>
     public void Update(string customerName, string branchName)
     {
-        if (Cancelled)
-            throw new InvalidOperationException("Cannot update a cancelled sale");
+      if (Cancelled)
+      {
+        throw new InvalidOperationException("Cannot update a cancelled sale");
+      }
 
-        if (!string.IsNullOrWhiteSpace(customerName))
-            CustomerName = customerName;
+      if (!string.IsNullOrWhiteSpace(customerName))
+      {
+        CustomerName = customerName;
+      }
 
-        if (!string.IsNullOrWhiteSpace(branchName))
-            BranchName = branchName;
+      if (!string.IsNullOrWhiteSpace(branchName))
+      {
+        BranchName = branchName;
+      }
 
-        UpdatedAt = DateTime.UtcNow;
+      UpdatedAt = DateTime.UtcNow;
     }
+
+    /// <summary>
+    /// Sets the sale date (for testing purposes).
+    /// </summary>
+    /// <param name="date">The date to set</param>
+    public void SetDate(DateTime date)
+    {
+      if (Cancelled)
+      {
+        throw new InvalidOperationException("Cannot update a cancelled sale");
+      }
+
+      Date = date;
+      UpdatedAt = DateTime.UtcNow;
+    }
+  }
 }
