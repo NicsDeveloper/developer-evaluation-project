@@ -38,8 +38,8 @@ public class SaleWithItemsTests
     // Assert
     Assert.Equal(2, sale.Items.Count);
     Assert.Equal(250.00m, sale.GrossTotal); // (5 * 10) + (10 * 20)
-    Assert.Equal(25.00m, sale.DiscountTotal); // (5 * 10 * 0.05) + (10 * 20 * 0.10)
-    Assert.Equal(225.00m, sale.NetTotal); // 250 - 25
+    Assert.Equal(22.50m, sale.DiscountTotal); // (5 * 10 * 0.05) + (10 * 20 * 0.10)
+    Assert.Equal(227.50m, sale.NetTotal); // 250 - 22.50
   }
 
   [Fact]
@@ -58,7 +58,7 @@ public class SaleWithItemsTests
     // Assert
     Assert.Single(sale.Items);
     Assert.Contains(item2, sale.Items);
-    Assert.DoesNotContain(item1, sale.Items);
+    Assert.False(sale.Items.Any(i => i.Id == item1.Id), $"Item1 with ID {item1.Id} should not be in the collection");
     Assert.Equal(200.00m, sale.GrossTotal); // 10 * 20
     Assert.Equal(20.00m, sale.DiscountTotal); // 10 * 20 * 0.10
     Assert.Equal(180.00m, sale.NetTotal); // 200 - 20
@@ -96,8 +96,8 @@ public class SaleWithItemsTests
 
     // Assert
     Assert.Equal(250.00m, sale.GrossTotal); // (15 * 10) + (20 * 5)
-    Assert.Equal(37.50m, sale.DiscountTotal); // (15 * 10 * 0.15) + (20 * 5 * 0.20)
-    Assert.Equal(212.50m, sale.NetTotal); // 250 - 37.50
+    Assert.Equal(42.50m, sale.DiscountTotal); // (15 * 10 * 0.15) + (20 * 5 * 0.20)
+    Assert.Equal(207.50m, sale.NetTotal); // 250 - 42.50
   }
 
   [Fact]
