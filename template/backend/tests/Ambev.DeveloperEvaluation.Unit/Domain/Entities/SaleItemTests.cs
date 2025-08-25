@@ -31,8 +31,8 @@ public class SaleItemTests
     Assert.False(item.Cancelled);
     Assert.NotEqual(DateTime.MinValue, item.CreatedAt);
     Assert.Equal(52.50m, item.GrossAmount); // 5 * 10.50
-    Assert.Equal(5.25m, item.DiscountAmount); // 10% discount for quantity 5
-    Assert.Equal(47.25m, item.NetAmount); // 52.50 - 5.25
+    Assert.Equal(2.625m, item.DiscountAmount); // 5% discount for quantity 5
+    Assert.Equal(49.875m, item.NetAmount); // 52.50 - 2.625
   }
 
   [Fact(DisplayName = "SaleItem should have correct initial state")]
