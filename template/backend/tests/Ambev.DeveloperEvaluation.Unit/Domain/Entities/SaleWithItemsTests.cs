@@ -156,9 +156,9 @@ public class SaleWithItemsTests
   public void SaleWithZeroItems_ShouldHaveZeroTotals()
   {
     // Arrange
-    var sale = Sale.Create("SALE009", Guid.NewGuid(), "Cliente Teste", Guid.NewGuid(), "Filial Teste);
+    var sale = Sale.Create("SALE009", Guid.NewGuid(), "Cliente Teste", Guid.NewGuid(), "Filial Teste");
 
-        // Act & Assert
+    // Act & Assert
     Assert.Empty(sale.Items);
     Assert.Equal(0.00m, sale.GrossTotal);
     Assert.Equal(0.00m, sale.DiscountTotal);
