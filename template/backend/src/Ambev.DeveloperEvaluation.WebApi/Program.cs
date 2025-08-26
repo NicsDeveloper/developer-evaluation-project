@@ -14,71 +14,112 @@ namespace Ambev.DeveloperEvaluation.WebApi;
 
 public class Program
 {
-    public static void Main(string[] args)
+  public static void Main(string[] args)
+  {
+    if (args.Length > 0 && args[0].Contains("ef"))
+      return;
+
+    try
     {
-        try
-        {
-            Log.Information("Starting web application");
+      Log.Logger = new LoggerConfiguration()
+          .WriteTo.Console()
+          .CreateLogger();
 
-            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-            builder.AddDefaultLogging();
+      Log.Information("Starting web application");
 
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
+      var builder = WebApplication.CreateBuilder(args);
+      builder.AddDefaultLogging();
 
-            builder.AddBasicHealthChecks();
-            builder.Services.AddSwaggerGen();
+      ConfigureServices(builder);
+      var app = builder.Build();
+      ConfigureMiddleware(app);
+      ApplyMigrations(app);
 
-            builder.Services.AddDbContext<DefaultContext>(options =>
-                options.UseNpgsql(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
-                )
-            );
+      Log.Information("Application configured successfully, starting to listen");
 
-            builder.Services.AddJwtAuthentication(builder.Configuration);
+      if (app.Environment.IsDevelopment())
+      {
+        app.Urls.Clear();
+        app.Urls.Add("http://+:8080");
+      }
 
-            builder.RegisterDependencies();
-
-            builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(ApplicationLayer).Assembly);
-
-            builder.Services.AddMediatR(cfg =>
-            {
-                cfg.RegisterServicesFromAssemblies(
-                    typeof(ApplicationLayer).Assembly,
-                    typeof(Program).Assembly
-                );
-            });
-
-            builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-            var app = builder.Build();
-            app.UseMiddleware<ValidationExceptionMiddleware>();
-
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.UseBasicHealthChecks();
-
-            app.MapControllers();
-
-            app.Run();
-        }
-        catch (Exception ex)
-        {
-            Log.Fatal(ex, "Application terminated unexpectedly");
-        }
-        finally
-        {
-            Log.CloseAndFlush();
-        }
+      app.Run();
     }
+    catch (Exception ex)
+    {
+      Log.Fatal(ex, "Application terminated unexpectedly");
+      throw;
+    }
+    finally
+    {
+      Log.CloseAndFlush();
+    }
+  }
+
+  private static void ConfigureServices(WebApplicationBuilder builder)
+  {
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.AddBasicHealthChecks();
+    builder.Services.AddSwaggerGen();
+
+    builder.Services.AddDbContext<DefaultContext>(options =>
+        options.UseNpgsql(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
+        )
+    );
+
+    builder.Services.AddJwtAuthentication(builder.Configuration);
+    builder.RegisterDependencies();
+    builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(ApplicationLayer).Assembly);
+
+    builder.Services.AddMediatR(cfg =>
+    {
+      cfg.RegisterServicesFromAssemblies(
+              typeof(ApplicationLayer).Assembly,
+              typeof(Program).Assembly
+          );
+    });
+
+    builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+  }
+
+  private static void ConfigureMiddleware(WebApplication app)
+  {
+    app.UseMiddleware<ValidationExceptionMiddleware>();
+
+    if (app.Environment.IsDevelopment())
+    {
+      app.UseSwagger();
+      app.UseSwaggerUI();
+    }
+    else
+    {
+      app.UseHttpsRedirection();
+    }
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.UseBasicHealthChecks();
+    app.MapControllers();
+  }
+
+  private static void ApplyMigrations(WebApplication app)
+  {
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<DefaultContext>();
+
+    try
+    {
+      Log.Information("Applying database migrations...");
+      context.Database.Migrate();
+      Log.Information("Database migrations applied successfully");
+    }
+    catch (Exception ex)
+    {
+      Log.Error(ex, "Error applying database migrations");
+      throw;
+    }
+  }
 }
