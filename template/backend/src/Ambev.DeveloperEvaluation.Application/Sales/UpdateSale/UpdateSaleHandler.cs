@@ -14,16 +14,23 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale
 
     public async Task<UpdateSaleResult> Handle(UpdateSaleCommand request, CancellationToken cancellationToken)
     {
-      Domain.Entities.Sale sale = await _saleRepository.GetByIdAsync(request.Id) ?? throw new InvalidOperationException($"Sale with ID {request.Id} not found");
+      if (string.IsNullOrWhiteSpace(request.CustomerName) && string.IsNullOrWhiteSpace(request.BranchName))
+      {
+        throw new InvalidOperationException("At least one field must be provided for update");
+      }
+
+      Domain.Entities.Sale sale = await _saleRepository.GetByIdAsync(request.Id)
+              ?? throw new InvalidOperationException($"Sale with ID {request.Id} not found");
+
       if (sale.Cancelled)
       {
         throw new InvalidOperationException($"Cannot update cancelled sale {sale.SaleNumber}");
       }
 
       sale.Update(
-              request.CustomerName ?? sale.CustomerName,
-              request.BranchName ?? sale.BranchName
-          );
+          request.CustomerName ?? sale.CustomerName,
+          request.BranchName ?? sale.BranchName
+      );
 
       Domain.Entities.Sale updatedSale = await _saleRepository.UpdateAsync(sale);
 
