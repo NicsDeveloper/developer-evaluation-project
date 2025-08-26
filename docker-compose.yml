@@ -10,9 +10,15 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=ambev.developerevaluation.database;Database=developer_evaluation;Username=developer;Password=ev@luAt10n;Port=5432
+      - DB_HOST=ambev.developerevaluation.database
+      - DB_NAME=developer_evaluation
+      - DB_USER=developer
+      - DB_PASSWORD=ev@luAt10n
+      - DB_PORT=5432
+      - JWT_SECRET_KEY=your-super-secret-jwt-key-for-development-only-change-in-production
     ports:
       - "8080:8080"
+      - "5000:8080"
     depends_on:
       - ambev.developerevaluation.database
       - ambev.developerevaluation.nosql
