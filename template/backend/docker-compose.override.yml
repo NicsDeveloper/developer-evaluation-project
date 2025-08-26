@@ -10,9 +10,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=developer_evaluation
-      - POSTGRES_USER=developer
-      - POSTGRES_PASSWORD=ev@luAt10n
+      - POSTGRES_DB=${POSTGRES_DB:-developer_evaluation}
+      - POSTGRES_USER=${POSTGRES_USER:-developer}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-dev_password}
 
   ambev.developerevaluation.nosql:
     ports:
